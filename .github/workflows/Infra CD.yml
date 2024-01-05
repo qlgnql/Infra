@@ -23,4 +23,4 @@ jobs:
 
     - name: Deploy CloudFormation stack
       run: |
-        aws cloudformation deploy --template-file Infra.yaml
+        aws cloudformation deploy --template-file Infra.yaml --stack-name v-test
