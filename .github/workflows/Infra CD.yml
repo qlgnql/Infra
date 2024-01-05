@@ -5,7 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'Infra.yaml'  # 변경을 감지할 파일 경로
+      - 'Infra.yaml'
+      - '.github/workflows/Infra CD.yml'  # 변경을 감지할 파일 경로
 
 jobs:
   deploy:
@@ -23,4 +24,4 @@ jobs:
 
     - name: Deploy CloudFormation stack
       run: |
-        aws cloudformation deploy --template-file Infra.yaml --stack-name v-test
+        aws cloudformation deploy --template-file Infra.yaml --stack-name v-test --s3-bucket v-cloudformation
