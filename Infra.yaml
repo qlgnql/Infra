@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
+# 테스트용 주석 추가
 # 클라우드포메이션 stack에 개별 출력(output) 내용 / 2023-12-27 주석 추가
 Outputs:
   personalizeStackPersonalizebucketS3:
