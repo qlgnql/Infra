@@ -36,10 +36,21 @@ jobs:
         account_id=$(aws sts get-caller-identity --output text --query 'Account')
         bucket_name="v-infra-${account_id}"
         aws s3 mb s3://$bucket_name --region ${{ secrets.AWS_REGION }}
-#        aws s3api create-bucket --bucket $bucket_name --region ${{ secrets.AWS_REGION }}
 
     - name: Deploy CloudFormation stack
       run: |
         account_id=$(aws sts get-caller-identity --output text --query 'Account')
         bucket_name="v-infra-${account_id}"
         aws cloudformation deploy --template-file CloudFormation.yaml --stack-name v-cloudformation --s3-bucket $bucket_name --capabilities CAPABILITY_IAM
+
+    - name: Check if CloudFormation deployment failed
+      id: check_deployment
+      run: |
+        stack_status=$(aws cloudformation describe-stacks --stack-name v-cloudformation --query 'Stacks[0].StackStatus' --output text)
+        if [ "$stack_status" == "ROLLBACK_COMPLETE" ] || [ "$stack_status" == "CREATE_FAILED" ]; then
+          echo "CloudFormation deployment failed. Deleting the stack..."
+          aws cloudformation delete-stack --stack-name v-cloudformation
+          exit 1  # Mark the job as failed
+        else
+          echo "CloudFormation deployment successful."
+        fi
