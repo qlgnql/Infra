@@ -19,23 +19,172 @@ Outputs:
   S3CopyCLIForLAB3:
     Description: Amazon S3 Bucket copy cli for LAB 3
     Value: !Sub >-
-      aws s3 cp ~/environment/personalizeworkshop/demogoprime-click-source-data.parquet s3://${PersonalizeBucket}/demogoprime-click-source-data.parquet
+      aws s3 cp ~/environment/infra/v-click-source-data.parquet s3://${PersonalizeBucket}/v-click-source-data.parquet
   S3CopyCLIForLAB5:
     Description: Amazon S3 Bucket copy cli for LAB 5
     Value: !Sub >-
-      aws s3 cp ~/environment/personalizeworkshop/demogoprime-click-stream-data.parquet s3://${PersonalizeBucket}/demogoprime-click-stream-data.parquet
+      aws s3 cp ~/environment/infra/v-click-stream-data.parquet s3://${PersonalizeBucket}/v-click-stream-data.parquet
   DeploytoCloudFront:
     Description: Deploy react application to S3 for static web hosting
     Value: !Sub >-
-      aws s3 sync ~/environment/personalizeworkshop/build s3://${S3Bucket}
+      aws s3 sync ~/environment/infra/build s3://${S3Bucket}
 
-Description: demogoprime-personalize
+Description: v-personalize
 # S3CopyCLIForLAB3:
 #     Description: Amazon S3 Bucket copy cli
 #     Value: !Sub >-
 #           aws s3 cp ~/environment/personalizeworkshop/demogoprime-click-source-data.parquet s3://<personalize-stack-personalizebucket-xxxxxx>/demogoprime-click-source-data.parquet
 # Description: demogoprime-personalize
+
+Description: "Creates an AWS WAF configuration that protects against common attacks and sets up S3 bucket and CloudFront distribution"
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Web ACL Name for Common Attack Protection"
+        Parameters:
+          - WebACLName
+    ParameterLabels:
+      WebACLName:
+        default: "Name"
+Parameters:
+  WebACLName:
+    Type: "String"
+    Default: "CommonAttackProtection"
+    Description: "Enter the name you want to use for the WebACL. This value is also added as a prefix for the names of the rules, conditions, and CloudWatch metrics created by this template."
+
 Resources:
+
+  MyWebACL:
+    Properties:
+      Name: !Ref WebACLName
+      DefaultAction:
+        Type: "ALLOW"
+      MetricName: !Ref WebACLName
+      Rules:
+        - Action:
+            Type: "BLOCK"
+          Priority: 1
+          RuleId:
+            Ref: "ManualIPBlockRule"
+        - Action:
+            Type: "COUNT"
+          Priority: 2
+          RuleId:
+            Ref: "SizeMatchRule"
+        - Action:
+            Type: "BLOCK"
+          Priority: 3
+          RuleId:
+            Ref: "SqliRule"
+        - Action:
+            Type: "BLOCK"
+          Priority: 4
+          RuleId:
+            Ref: "XssRule"
+    Type: "AWS::WAF::WebACL"
+
+  SqliRule:
+    Properties:
+      Name: !Join ["", [!Ref WebACLName, "SqliRule"]]
+      MetricName: !Join ["", [{ "Ref" : WebACLName }, "SqliRule"]]
+      Predicates:
+        - DataId:
+            Ref: "SqliMatchSet"
+          Negated: false
+          Type: "SqlInjectionMatch"
+    Type: "AWS::WAF::Rule"
+
+  XssRule:
+    Properties:
+      Name: !Join ["", [{ "Ref" : WebACLName }, "XssRule"]]
+      MetricName: !Join ["", [{ "Ref" : WebACLName }, "XssRule"]]
+      Predicates:
+        - DataId:
+            Ref: "XssMatchSet"
+          Negated: false
+          Type: "XssMatch"
+    Type: "AWS::WAF::Rule"
+
+  SizeMatchRule:
+    Properties:
+      Name: !Join ["", [{ "Ref" : WebACLName }, "LargeBodyMatchRule"]]
+      MetricName: !Join ["", [{ "Ref" : WebACLName }, "DetectLargeBody"]]
+      Predicates:
+        - DataId:
+            Ref: "SizeMatchSet"
+          Negated: false
+          Type: "SizeConstraint"
+    Type: "AWS::WAF::Rule"
+
+  ManualIPBlockRule:
+    Properties:
+      Name: !Join ["", [{ "Ref" : WebACLName }, "ManualIPBlockRule"]]
+      MetricName: !Join ["", [{ "Ref" : WebACLName }, "ManualIPBlockRule"]]
+      Predicates:
+        - DataId:
+            Ref: "WAFManualIPBlockSet"
+          Negated: false
+          Type: "IPMatch"
+    Type: "AWS::WAF::Rule"
+
+  WAFManualIPBlockSet:
+    Properties:
+      Name: "Manual IP Block Set"
+    Type: "AWS::WAF::IPSet"
+
+  SizeMatchSet:
+    Properties:
+      Name: !Join ["", [{ "Ref" : WebACLName }, "LargeBodyMatch"]]
+      SizeConstraints:
+        - FieldToMatch:
+            Type: "BODY"
+          ComparisonOperator: "GT"
+          Size: "8192"
+          TextTransformation: "NONE"
+    Type: "AWS::WAF::SizeConstraintSet"
+
+  SqliMatchSet:
+    Properties:
+      Name: !Join ["", [{ "Ref" : WebACLName }, "SqliMatch"]]
+      SqlInjectionMatchTuples:
+        - FieldToMatch:
+            Type: "QUERY_STRING"
+          TextTransformation: "URL_DECODE"
+        - FieldToMatch:
+            Type: "QUERY_STRING"
+          TextTransformation: "HTML_ENTITY_DECODE"
+        - FieldToMatch:
+            Type: "BODY"
+          TextTransformation: "URL_DECODE"
+        - FieldToMatch:
+            Type: "BODY"
+          TextTransformation: "HTML_ENTITY_DECODE"
+        - FieldToMatch:
+            Type: "URI"
+          TextTransformation: "URL_DECODE"
+    Type: "AWS::WAF::SqlInjectionMatchSet"
+
+  XssMatchSet:
+    Properties:
+      Name: !Join ["", [{ "Ref" : WebACLName }, "XssMatch"]]
+      XssMatchTuples:
+        - FieldToMatch:
+            Type: "QUERY_STRING"
+          TextTransformation: "URL_DECODE"
+        - FieldToMatch:
+            Type: "QUERY_STRING"
+          TextTransformation: "HTML_ENTITY_DECODE"
+        - FieldToMatch:
+            Type: "BODY"
+          TextTransformation: "URL_DECODE"
+        - FieldToMatch:
+            Type: "BODY"
+          TextTransformation: "HTML_ENTITY_DECODE"
+        - FieldToMatch:
+            Type: "URI"
+          TextTransformation: "URL_DECODE"
+    Type: "AWS::WAF::XssMatchSet"
 
   S3Bucket:
     DeletionPolicy: 'Delete'
@@ -67,6 +216,9 @@ Resources:
       Comment: 'A simple CloudFront distribution with an S3 origin'
     Properties:
       DistributionConfig:
+        Aliases: 
+          - 'kyiajm.link'
+          - 'www.kyiajm.link'
         Comment: 'A simple distribution with an S3 origin'
         DefaultCacheBehavior:
           AllowedMethods:
@@ -103,6 +255,9 @@ Resources:
             S3OriginConfig:
               OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CfOriginAccessIdentity}'
         PriceClass: 'PriceClass_All'
+
+        WebACLId: !Ref MyWebACL
+        
     Type: 'AWS::CloudFront::Distribution'
 
   CfOriginAccessIdentity:
@@ -113,7 +268,25 @@ Resources:
         Comment: 'Access S3 bucket content only through CloudFront'
     Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
 
+  MyRoute53Record:
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneId: 'Z07566741L7LDTZ7Y6CEU'  # Route 53 Hosted Zone ID를 입력하세요.
+      Name: !Sub '${S3Bucket}'    # CloudFront 배포의 도메인을 입력하세요.
+      Type: 'A'
+      AliasTarget:
+        DNSName: !GetAtt 'CfDistribution.DomainName'
+        HostedZoneId: 'Z2FDTNDATAQYW2'  # CloudFront의 고정 Hosted Zone ID
 
+  MyRoute53Record2:
+    Type: 'AWS::Route53::RecordSet'
+    Properties: 
+      HostedZoneId: 'Z07566741L7LDTZ7Y6CEU'   # Route 53 Hosted Zone ID를 입력하세요.
+      Name: !Sub 'www.${S3Bucket}' # CloudFront 배포의 도메인을 입력하세요.
+      Type: 'A'
+      AliasTarget:
+        DNSName: !GetAtt 'CfDistribution.DomainName'
+        HostedZoneId: 'Z2FDTNDATAQYW2'  # CloudFront의 고정 Hosted Zone ID
 
   KinesisProcessingFunction:
     Type: 'AWS::Lambda::Function'
@@ -236,11 +409,11 @@ Resources:
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}/index/*
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                 Effect: Allow
         - PolicyName: KinesisProcessingFunctionRolePolicy4
           PolicyDocument:
@@ -308,7 +481,7 @@ Resources:
             def lambda_handler(event, context):
                 print(event)
                 
-                kinesis_stream = 'demogoprime-kinesis-stream-prd'
+                kinesis_stream = 'v-kinesis-stream-prd'
                 partition_key = event["PartitionKey"]
                 data = event["Data"]
                 
@@ -411,11 +584,11 @@ Resources:
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}/index/*
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                 Effect: Allow
         - PolicyName: RealtimeRecommendationFunctionRolePolicy5
           PolicyDocument:
@@ -468,7 +641,7 @@ Resources:
             personalizeRt = boto3.client('personalize-runtime')
             dynamodb = boto3.resource('dynamodb')
 
-            movie_table = dynamodb.Table('Movie')
+            music_table = dynamodb.Table('Music')
 
             def get_personalize_recommendations(userId):
                 response = personalizeRt.get_recommendations(
@@ -482,33 +655,33 @@ Resources:
             def lambda_handler(event, context):
                 userId = event['pathParameters']['id']
                 response = get_personalize_recommendations(userId)
-                movie_list = response['itemList']
+                music_list = response['itemList']
                 
                 item_ids = []
                 
-                for movie in movie_list:
-                    item_ids.append(movie['itemId'])
+                for music in music_list:
+                    item_ids.append(music['itemId'])
                     
                 batch_keys = {
-                    movie_table.name: {
-                        'Keys': [{'id': movie['itemId']} for movie in movie_list],
+                    music_table.name: {
+                        'Keys': [{'id': music['itemId']} for music in music_list],
                         'ProjectionExpression': 'id, #name, category, imageUrl',
                         'ExpressionAttributeNames': {'#name': 'name'}
                     }
                 }
                 
                 response = dynamodb.batch_get_item(RequestItems=batch_keys)
-                recommendations = response['Responses']['Movie']
+                recommendations = response['Responses']['Music']
                 
                 for recommendation in recommendations:
-                    for movie in movie_list:
-                        if recommendation['id'] == movie['itemId']:
-                            recommendation['score'] = movie['score']
+                    for music in music_list:
+                        if recommendation['id'] == music['itemId']:
+                            recommendation['score'] = music['score']
                             
                 recommendations = sorted(recommendations, key=itemgetter('score'), reverse=True)
                 
                 response = {
-                    'movies': recommendations
+                    'musics': recommendations
                 }
                 
                 return {
@@ -541,10 +714,10 @@ Resources:
       ImageId: amazonlinux-2023-x86_64
       Repositories:
         - RepositoryUrl: 'https://github.com/qlgnql/infra'
-          PathComponent: personalizeworkshop
+          PathComponent: infra
       Description: Use this to work with Frontend application
-      InstanceType: t2.micro
-      Name: personalizeworkshop
+      InstanceType: t3.large
+      Name: infra
   putItemFunctionApiPermissionProd:
     Type: 'AWS::Lambda::Permission'
     Properties:
@@ -553,7 +726,7 @@ Resources:
       FunctionName: !Ref putItemFunction
       SourceArn: !Sub 
         - >-
-          arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/POST/movie
+          arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/POST/music
         - __Stage__: '*'
           __ApiId__: !Ref ServerlessRestApi
   getAllUserFunction:
@@ -669,7 +842,7 @@ Resources:
             }
 
         
-      FunctionName: getAllMovieFunction  
+      FunctionName: getAllMusicFunction  
       Description: >-
         A simple example includes a HTTP get method to get all items from a
         DynamoDB table.
@@ -679,7 +852,7 @@ Resources:
       MemorySize: 128
       Environment:
         Variables:
-          SAMPLE_TABLE: !Ref MovieTable
+          SAMPLE_TABLE: !Ref MusicTable
       Handler: index.getAllItemsHandler
       Role: !GetAtt 
         - getAllItemsFunctionRole
@@ -694,7 +867,7 @@ Resources:
       FunctionName: !Ref getAllItemsFunction
       SourceArn: !Sub 
         - >-
-          arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/GET/movie
+          arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/GET/music
         - __Stage__: '*'
           __ApiId__: !Ref ServerlessRestApi
   getAllItemsFunctionRole:
@@ -730,11 +903,11 @@ Resources:
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}/index/*
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                 Effect: Allow
       Tags:
         - Value: SAM
@@ -750,13 +923,13 @@ Resources:
           arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/GET/recommendation/batch/*
         - __Stage__: '*'
           __ApiId__: !Ref ServerlessRestApi
-  MovieTable:
+  MusicTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
       ProvisionedThroughput:
         WriteCapacityUnits: 2
         ReadCapacityUnits: 2
-      TableName: Movie
+      TableName: Music
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
@@ -832,7 +1005,7 @@ Resources:
               return response;
             }
 
-      FunctionName: getMovieByIdFunction
+      FunctionName: getMusicByIdFunction
       Description: >-
         A simple example includes a HTTP get method to get one item by id from a
         DynamoDB table.
@@ -842,7 +1015,7 @@ Resources:
       MemorySize: 128
       Environment:
         Variables:
-          SAMPLE_TABLE: !Ref MovieTable
+          SAMPLE_TABLE: !Ref MusicTable
       Handler: index.getByIdHandler
       Role: !GetAtt 
         - getByIdFunctionRole
@@ -875,7 +1048,7 @@ Resources:
             import boto3,json
             dynamodb = boto3.resource('dynamodb')
             table = dynamodb.Table('personalize-batch')
-            movie_table = dynamodb.Table('Movie')
+            music_table = dynamodb.Table('Music')
 
             def lambda_handler(event, context):
                 print(event)
@@ -887,30 +1060,30 @@ Resources:
                 )
 
                 #print(response['Item']['item-list'])
-                movie_list = response['Item']['item-list']
+                music_list = response['Item']['item-list']
                 score_set = response['Item']['score-list']
                 score_list = list(score_set)
 
                 batch_keys = {
-                    movie_table.name: {
-                        'Keys': [{'id': movie} for movie in movie_list],
+                    music_table.name: {
+                        'Keys': [{'id': music} for music in music_list],
                         'ProjectionExpression': 'id, #name, category, imageUrl',
                         'ExpressionAttributeNames': {'#name': 'name'}
                     }
                 }
                 bat_response = dynamodb.batch_get_item(RequestItems=batch_keys)
-                recommendations = bat_response['Responses']['Movie']
+                recommendations = bat_response['Responses']['Music']
 
 
                 for recommendation in recommendations:
                     i=0;
-                    for movie in movie_list:
-                        if recommendation['id'] == movie:
+                    for music in music_list:
+                        if recommendation['id'] == music:
                             recommendation['score'] = score_list[i]
                         i = i+1
 
                 response = {
-                    'movies': recommendations
+                    'musics': recommendations
                 }
                 
                 return {
@@ -978,11 +1151,11 @@ Resources:
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}/index/*
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                 Effect: Allow
         - PolicyName: RealtimeRecommendationFunctionRolePolicy2
           PolicyDocument:
@@ -1072,7 +1245,7 @@ Resources:
                 return response;
             }
 
-      FunctionName: putMovieFunction
+      FunctionName: putMusicFunction
       Description: >-
         A simple example includes a HTTP post method to add one item to a
         DynamoDB table.
@@ -1082,7 +1255,7 @@ Resources:
       MemorySize: 128
       Environment:
         Variables:
-          SAMPLE_TABLE: !Ref MovieTable
+          SAMPLE_TABLE: !Ref MusicTable
       Handler: index.putItemHandler
       Role: !GetAtt 
         - putItemFunctionRole
@@ -1122,11 +1295,11 @@ Resources:
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}/index/*
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                 Effect: Allow
       Tags:
         - Value: SAM
@@ -1164,11 +1337,11 @@ Resources:
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}/index/*
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}
@@ -1248,7 +1421,7 @@ Resources:
           version: '1.0'
           title: !Ref 'AWS::StackName'
         paths:
-          '/movie/{id}':
+          '/music/{id}':
             get:
               x-amazon-apigateway-integration:
                 httpMethod: POST
@@ -1256,7 +1429,7 @@ Resources:
                 uri: !Sub >-
                   arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getByIdFunction.Arn}/invocations
               responses: {}
-          /movie:
+          /music:
             post:
               x-amazon-apigateway-integration:
                 httpMethod: POST
@@ -1295,7 +1468,7 @@ Resources:
                 uri: !Sub >-
                   arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getAllUserFunction.Arn}/invocations
               responses: {}
-          '/stream/demogoprime-kinesis-stream-prd/record':
+          '/stream/v-kinesis-stream-prd/record':
             post:
               x-amazon-apigateway-integration:
                 httpMethod: POST
@@ -1355,11 +1528,11 @@ Resources:
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                   - !Sub 
                     - >-
                       arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}/index/*
-                    - tableName: !Ref MovieTable
+                    - tableName: !Ref MusicTable
                 Effect: Allow
       Tags:
         - Value: SAM
@@ -1425,7 +1598,7 @@ Resources:
   KinesisStream: 
     Type: AWS::Kinesis::Stream 
     Properties: 
-        Name: demogoprime-kinesis-stream-prd 
+        Name: v-kinesis-stream-prd 
         RetentionPeriodHours: 24 
         ShardCount: 1  
 
@@ -1439,7 +1612,7 @@ Resources:
       FunctionName: !Ref getByIdFunction
       SourceArn: !Sub 
         - >-
-          arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/GET/movie/*
+          arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/GET/music/*
         - __Stage__: '*'
           __ApiId__: !Ref ServerlessRestApi
 

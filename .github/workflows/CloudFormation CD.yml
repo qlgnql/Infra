@@ -1,0 +1,42 @@
+name: CloudFormation CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Infra.yaml'
+      - '.github/workflows/Infra CD.yml'  # 변경을 감지할 파일 경로
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      run:
+        aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} &&
+        aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} &&
+        aws configure set region ${{ secrets.AWS_REGION }}
+
+    - name: Check if S3 bucket exists
+      id: check_bucket
+      run: |
+        account_id=$(aws sts get-caller-identity --output text --query 'Account')
+        bucket_name="v-infra-${account_id}"
+        aws s3api head-bucket --bucket $bucket_name || echo "Bucket does not exist"
+      continue-on-error: true
+  
+    - name: Create S3 bucket if not exists
+      if: steps.check_bucket.outcome != 'success'
+      run: |
+        account_id=$(aws sts get-caller-identity --output text --query 'Account')
+        bucket_name="v-infra-${account_id}"
+        aws s3api create-bucket --bucket $bucket_name --region ${{ secrets.AWS_REGION }}
+
+    - name: Deploy CloudFormation stack
+      run: |
+        aws cloudformation deploy --template-file CloudFormation.yaml --stack-name v-cloudformation --s3-bucket ${bucket_name} --capabilities CAPABILITY_IAM
