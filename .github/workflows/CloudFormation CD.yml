@@ -1,7 +1,7 @@
 name: CloudFormation CD
 
 on:
-  push:
+  pull_request:
     branches:
       - main
     paths: # 변경을 감지할 파일 경로
