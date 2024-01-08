@@ -35,7 +35,7 @@ jobs:
       run: |
         account_id=$(aws sts get-caller-identity --output text --query 'Account')
         bucket_name="v-infra-${account_id}"
-        aws s3api create-bucket --bucket $bucket_name --region ${{ secrets.AWS_REGION }}
+        aws s3 mb s3://$bucket_name --region ${{ secrets.AWS_REGION }}
 
     - name: Deploy CloudFormation stack
       run: |
