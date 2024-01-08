@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths: # 변경을 감지할 파일 경로
-      - 'Infra.yaml'
-      - '.github/workflows/Infra CD.yml'
+      - 'CloudFormation.yaml'
+      - '.github/workflows/CloudFormation CD.yml'
 
 jobs:
   deploy:
