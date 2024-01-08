@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - develop
+    paths-ignore:
+      - '.github/workflows/CloudFormation CD.yml'
+      - 'CloudFormation.yaml'
 
 jobs:
   build:

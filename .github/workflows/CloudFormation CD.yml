@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
+    paths: # 변경을 감지할 파일 경로
       - 'Infra.yaml'
-      - '.github/workflows/Infra CD.yml'  # 변경을 감지할 파일 경로
+      - '.github/workflows/Infra CD.yml'
 
 jobs:
   deploy:
@@ -39,4 +39,6 @@ jobs:
 
     - name: Deploy CloudFormation stack
       run: |
-        aws cloudformation deploy --template-file CloudFormation.yaml --stack-name v-cloudformation --s3-bucket ${bucket_name} --capabilities CAPABILITY_IAM
+        account_id=$(aws sts get-caller-identity --output text --query 'Account')
+        bucket_name="v-infra-${account_id}"
+        aws cloudformation deploy --template-file CloudFormation.yaml --stack-name v-cloudformation --s3-bucket $bucket_name --capabilities CAPABILITY_IAM
