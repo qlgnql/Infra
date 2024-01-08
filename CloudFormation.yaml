@@ -52,6 +52,10 @@ Parameters:
     Type: "String"
     Default: "CommonAttackProtection"
     Description: "Enter the name you want to use for the WebACL. This value is also added as a prefix for the names of the rules, conditions, and CloudWatch metrics created by this template."
+Parameters:
+  CertificateId:
+    Type: String
+    Description: ACM Certificate ID
 
 Resources:
 
@@ -248,6 +252,10 @@ Resources:
         Enabled: true
         HttpVersion: 'http1.1'
         IPV6Enabled: false
+        ViewerCertificate:
+          AcmCertificateArn: !Sub "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/${CertificateId}"
+          SslSupportMethod: 'sni-only'
+          MinimumProtocolVersion: TLSv1.2_2021
         Origins:
           - DomainName: !GetAtt S3Bucket.DomainName
             Id: !Sub 's3-origin-${S3Bucket}'
