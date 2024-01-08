@@ -24,4 +24,4 @@ jobs:
 
     - name: Deploy CloudFormation stack
       run: |
-        aws cloudformation deploy --template-file Infra.yaml --stack-name v-test --s3-bucket v-cloudformation --capabilities CAPABILITY_IAM
+        aws cloudformation deploy --template-file Infra.yaml --stack-name v-infra-test --s3-bucket v-cloudformation --capabilities CAPABILITY_IAM
