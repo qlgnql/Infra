@@ -30,6 +30,8 @@ jobs:
         aws configure set AWS_ACCESS_KEY_ID ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws configure set AWS_SECRET_ACCESS_KEY ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws configure set AWS_REGION ${{ secrets.AWS_REGION }}
+        echo "AWS CLI configuration:"
+        aws configure list
 
     - name: Check if S3 bucket exists
       id: check_bucket
@@ -47,6 +49,7 @@ jobs:
       run: |
         account_id=$(aws sts get-caller-identity --output text --query 'Account')
         bucket_name="infra-${account_id}"
+        echo "AWS_REGION environment variable: $AWS_REGION"
         aws cloudformation deploy --template-file CloudFormation.yaml --stack-name beatoncloud --s3-bucket $bucket_name --capabilities CAPABILITY_IAM
 
     - name: Check if CloudFormation deployment failed
