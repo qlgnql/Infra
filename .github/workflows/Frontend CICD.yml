@@ -48,7 +48,11 @@ jobs:
     
       - name: Get API Gateway endpoint
         run: |
+<<<<<<< HEAD
           API_ID=$(aws cloudformation describe-stacks --stack-name beatoncloud --query "Stacks[0].Outputs[?OutputKey=='APIEndpoint'].OutputValue" --output text)
+=======
+          API_ID=$(aws cloudformation describe-stacks --stack-name v-cloudformation --query "Stacks[0].Outputs[?OutputKey=='APIEndpoint'].OutputValue" --output text)
+>>>>>>> 7a2344df1c48b422c0879501a13eaea780c2f41a
           echo "{\"ApiUrl\": \"$API_ID\"}" > src/config.json
     
       - name: Build project
@@ -60,7 +64,7 @@ jobs:
         run: |
           S3_BUCKET_URL=$(aws cloudformation describe-stacks --stack-name beatoncloud --query "Stacks[0].Outputs[?OutputKey=='DeploytoCloudFront'].OutputValue" --output text)
           echo "$S3_BUCKET_URL" > s3sync.sh
-          sed -i 's/environment\/personalizeworkshop/work\/BOC\/BOC/g' s3sync.sh
+          sed -i 's/environment/work\/Infra/g' s3sync.sh
     
       - name: Deploy to S3
         run: sh s3sync.sh
