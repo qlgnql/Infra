@@ -1595,11 +1595,13 @@ Resources:
   
   PersonalizeBucket:
     Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub beatoncloud-bucket-${AWS::AccountId}
 
   PersonalizeBatchBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: !Sub personalize-stack-personalize-batchbucket-${AWS::AccountId}
+      BucketName: !Sub beatoncloud-batchbucket-${AWS::AccountId}
 
   
   KinesisStream: 
