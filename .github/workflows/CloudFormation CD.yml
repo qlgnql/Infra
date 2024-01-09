@@ -27,24 +27,13 @@ jobs:
       run: |
         account_id=$(aws sts get-caller-identity --output text --query 'Account')
         bucket_name="infra-${account_id}"
-        aws s3api head-bucket --bucket $bucket_name || echo "Bucket does not exist"
-      continue-on-error: true
-
-    - name: Create or Use S3 bucket
-      run: |
-        if [ "$?" == "0" ]; then
-          account_id=$(aws sts get-caller-identity --output text --query 'Account')
-          bucket_name="infra-${account_id}"
-          aws s3 mb s3://$bucket_name --region ${{ secrets.AWS_REGION }}
-          echo "Created new S3 bucket: $bucket_name"
+        if ! aws s3api head-bucket --bucket $bucket_name 2>/dev/null; then
+          echo "Bucket does not exist, creating bucket"
+          aws s3api create-bucket --bucket ${bucket_name} --region $AWS_REGION
         else
-          account_id=$(aws sts get-caller-identity --output text --query 'Account')
-          bucket_name="infra-${account_id}"
-          # Your code here to use the existing S3 bucket
-          echo "Using existing S3 bucket: $bucket_name"
-          # Add your additional steps or commands that use the existing bucket
+          echo "Bucket exists, no further action needed"
         fi
-
+    
     - name: Deploy CloudFormation stack
       run: |
         account_id=$(aws sts get-caller-identity --output text --query 'Account')
@@ -62,3 +51,20 @@ jobs:
         else
           echo "CloudFormation deployment successful."
         fi
+
+    # - name: Check if S3 bucket exists
+    #   id: check_bucket
+    #   run: |
+    #     account_id=$(aws sts get-caller-identity --output text --query 'Account')
+    #     bucket_name="infra-${account_id}"
+    #     if aws s3api head-bucket --bucket $bucket_name 2>/dev/null; then
+    #       echo "Bucket exists, using existing bucket"
+    #       # Add your commands to use the existing bucket here
+    #       existing_bucket_command="aws s3 ls s3://${bucket_name}"
+    #       $existing_bucket_command
+    #     else
+    #       echo "Bucket does not exist, creating bucket"
+    #       create_bucket_command="aws s3api create-bucket --bucket ${bucket_name} --region ap-northeast-2"
+    #       $create_bucket_command
+    #       # Add your commands to use the newly created bucket here
+    #     fi
