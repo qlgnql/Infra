@@ -19,9 +19,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: home directory
-        run: pwd
     
       - name: Install AWS CLI
         run: |
@@ -57,7 +54,10 @@ jobs:
           echo "{\"ApiUrl\": \"$API_ID\"}" > src/config.json
     
       - name: Build project
-        run: npm run build
+        run: |
+          echo $HOME
+          pwd
+          npm run build
         env: 
           CI: ""
     
