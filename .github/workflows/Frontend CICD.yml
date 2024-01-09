@@ -59,7 +59,7 @@ jobs:
       - name: Frontend Deploy to S3
         run: |
           account_id=$(aws sts get-caller-identity --output text --query 'Account')
-          S3_NAME=$(aws s3api list-buckets --query "Buckets[?contains(Name, 'beatoncloud-$account_id')].Name" --output text)
+          S3_NAME=$(aws s3api list-buckets --query "Buckets[?contains(Name, 'beatoncloud.com')].Name" --output text)
           aws s3 sync $GITHUB_WORKSPACE/build s3://$S3_NAME
           S3_NAME1=$(aws s3api list-buckets --query "Buckets[?contains(Name, 'beatoncloud-bucket-$account_id')].Name" --output text)
           aws s3 cp $GITHUB_WORKSPACE/beatoncloud-click-source-data.parquet s3://$S3_NAME1/beatoncloud-click-source-data.parquet
