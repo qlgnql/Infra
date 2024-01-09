@@ -17,18 +17,18 @@ Outputs:
   CfDistributionDomainName:
     Description: 'Domain name for our cloudfront distribution'
     Value: !GetAtt CfDistribution.DomainName
-  S3CopyCLIForLAB3:
-    Description: Amazon S3 Bucket copy cli for LAB 3
-    Value: !Sub >-
-      aws s3 cp ~/work/Infra/Infra/beatoncloud-click-source-data.parquet s3://${PersonalizeBucket}/beatoncloud-click-source-data.parquet
-  S3CopyCLIForLAB5:
-    Description: Amazon S3 Bucket copy cli for LAB 5
-    Value: !Sub >-
-      aws s3 cp ~/work/Infra/Infra/beatoncloud-click-stream-data.parquet s3://${PersonalizeBucket}/beatoncloud-click-stream-data.parquet
-  DeploytoCloudFront:
-    Description: Deploy react application to S3 for static web hosting
-    Value: !Sub >-
-      aws s3 sync ~/work/Infra/Infra/build s3://${S3Bucket}
+  # S3CopyCLIForLAB3:
+  #   Description: Amazon S3 Bucket copy cli for LAB 3
+  #   Value: !Sub >-
+  #     aws s3 cp ~/work/Infra/Infra/beatoncloud-click-source-data.parquet s3://${PersonalizeBucket}/beatoncloud-click-source-data.parquet
+  # S3CopyCLIForLAB5:
+  #   Description: Amazon S3 Bucket copy cli for LAB 5
+  #   Value: !Sub >-
+  #     aws s3 cp ~/work/Infra/Infra/beatoncloud-click-stream-data.parquet s3://${PersonalizeBucket}/beatoncloud-click-stream-data.parquet
+  # DeploytoCloudFront:
+  #   Description: Deploy react application to S3 for static web hosting
+  #   Value: !Sub >-
+  #     aws s3 sync ~/work/Infra/Infra/build s3://${S3Bucket}
 
 # 클라우드포메이션 stack에 대한 description / 2023-12-27 주석 추가
 Description: beatoncloud-personalize
@@ -190,7 +190,7 @@ Resources:
       Comment: 'Bucket to store some data'
     Properties:
       AccessControl: 'Private'
-      BucketName: !Sub 'beatoncloud-${AWS::AccountId}'
+      BucketName: !Sub 'beatoncloud.com'
     Type: 'AWS::S3::Bucket'
 
   # S3에 대한 버킷 정책 생성 / 2023-12-27 주석 추가
@@ -453,10 +453,6 @@ Resources:
                     - 'arn:${AWS::Partition}:s3:::${bucketName}'
                     - bucketName: !Ref PersonalizeBucket
                 Effect: Allow
-
-
-
-
 
   KinesisStreamFunction:
     Type: 'AWS::Lambda::Function'
@@ -1501,7 +1497,6 @@ Resources:
         title: Empty Schema
         type: object
 
-
   putItemFunctionRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -1602,7 +1597,6 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Sub beatoncloud-batchbucket-${AWS::AccountId}
-
   
   KinesisStream: 
     Type: AWS::Kinesis::Stream 
