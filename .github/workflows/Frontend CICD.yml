@@ -55,11 +55,11 @@ jobs:
         run: npm run build
         env: 
           CI: ""
-    
-      - name: Print workspace
-        run: echo "Workspace ${{ github.workspace }}"
-    
-      - name: Run S3 Sync
-        run: |
-          S3_BUCKET_URL=$(aws cloudformation describe-stacks --stack-name beatoncloud --query "Stacks[0].Outputs[?OutputKey=='DeploytoCloudFront'].OutputValue" --output text)
-          $S3_BUCKET_URL
+
+      - name: Deploy to S3
+        run: npm run deploy
+
+      # - name: Run S3 Sync
+      #   run: |
+      #     S3_BUCKET_URL=$(aws cloudformation describe-stacks --stack-name beatoncloud --query "Stacks[0].Outputs[?OutputKey=='DeploytoCloudFront'].OutputValue" --output text)
+      #     $S3_BUCKET_URL
