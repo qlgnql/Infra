@@ -5,9 +5,8 @@ on:
     branches:
       - develop
     paths-ignore:
-      - '.github/workflows/*'
-      # - '.github/workflows/CloudFormation CD.yml'
-      # - '.github/workflows/Frontend CICD.yml'
+      - '.github/workflows/CloudFormation CD.yml'
+      - '.github/workflows/Frontend CICD.yml'
       - 'CloudFormation.yaml'
 
 jobs:
