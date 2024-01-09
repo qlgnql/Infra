@@ -20,15 +20,15 @@ Outputs:
   S3CopyCLIForLAB3:
     Description: Amazon S3 Bucket copy cli for LAB 3
     Value: !Sub >-
-      aws s3 cp ~/environment/personalizeworkshop/beatoncloud-click-source-data.parquet s3://${PersonalizeBucket}/beatoncloud-click-source-data.parquet
+      aws s3 cp ~/work/Infra/Infra//beatoncloud-click-source-data.parquet s3://${PersonalizeBucket}/beatoncloud-click-source-data.parquet
   S3CopyCLIForLAB5:
     Description: Amazon S3 Bucket copy cli for LAB 5
     Value: !Sub >-
-      aws s3 cp ~/environment/personalizeworkshop/beatoncloud-click-stream-data.parquet s3://${PersonalizeBucket}/beatoncloud-click-stream-data.parquet
+      aws s3 cp ~/work/Infra/Infra//beatoncloud-click-stream-data.parquet s3://${PersonalizeBucket}/beatoncloud-click-stream-data.parquet
   DeploytoCloudFront:
     Description: Deploy react application to S3 for static web hosting
     Value: !Sub >-
-      aws s3 sync ~/environment/personalizeworkshop/build s3://${S3Bucket}
+      aws s3 sync ~/work/Infra/Infra/build s3://${S3Bucket}
 
 # 클라우드포메이션 stack에 대한 description / 2023-12-27 주석 추가
 Description: beatoncloud-personalize

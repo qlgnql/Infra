@@ -32,7 +32,7 @@ jobs:
           cache: 'npm'
     
       - name: Install Node.js dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm install --force
     
       - name: Configure AWS credentials
         run: |
@@ -56,11 +56,7 @@ jobs:
         env: 
           CI: ""
     
-      - name: Get S3 Bucket URL
+      - name: Run S3 Sync
         run: |
           S3_BUCKET_URL=$(aws cloudformation describe-stacks --stack-name beatoncloud --query "Stacks[0].Outputs[?OutputKey=='DeploytoCloudFront'].OutputValue" --output text)
-          echo "$S3_BUCKET_URL" > s3sync.sh
-          sed -i 's/environment/work\/Infra/g' s3sync.sh
-    
-      - name: Deploy to S3
-        run: sh s3sync.sh
+          $S3_BUCKET_URL
