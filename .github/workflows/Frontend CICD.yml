@@ -44,9 +44,7 @@ jobs:
         run: chmod +x uploadDataToDynamoDB.sh
     
       - name: Run custom script
-        run: |
-          pwd
-          sh uploadDataToDynamoDB.sh
+        run: sh uploadDataToDynamoDB.sh
     
       - name: Get API Gateway endpoint
         run: |
@@ -54,14 +52,11 @@ jobs:
           echo "{\"ApiUrl\": \"$API_ID\"}" > src/config.json
     
       - name: Build project
-        run: |
-          echo $HOME
-          pwd
-          npm run build
+        run: npm run build
         env: 
           CI: ""
     
-      - name: Run S3 Sync
-        run: |
-          S3_BUCKET_URL=$(aws cloudformation describe-stacks --stack-name beatoncloud --query "Stacks[0].Outputs[?OutputKey=='DeploytoCloudFront'].OutputValue" --output text)
-          $S3_BUCKET_URL
+      - name: Print workspace
+        run: echo "Workspace ${{ github.workspace }}"
+    
+
