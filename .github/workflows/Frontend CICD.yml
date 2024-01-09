@@ -44,7 +44,9 @@ jobs:
         run: chmod +x uploadDataToDynamoDB.sh
     
       - name: Run custom script
-        run: sh uploadDataToDynamoDB.sh
+        run: |
+          pwd
+          sh uploadDataToDynamoDB.sh
     
       - name: Get API Gateway endpoint
         run: |
