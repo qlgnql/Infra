@@ -4,7 +4,7 @@ on:
   pull_request:
     branches:
       - main
-    paths: # 변경을 감지할 파일 경로
+    paths:
       - 'CloudFormation.yaml'
       - '.github/workflows/CloudFormation CD.yml'
 
@@ -17,25 +17,33 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Configure AWS credentials
-      run:
-        aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} &&
-        aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} &&
-        aws configure set region ${{ secrets.AWS_REGION }}
+      run: |
+        aws configure set AWS_ACCESS_KEY_ID ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws configure set AWS_SECRET_ACCESS_KEY ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws configure set AWS_REGION ${{ secrets.AWS_REGION }}
 
     - name: Check if S3 bucket exists
       id: check_bucket
       run: |
         account_id=$(aws sts get-caller-identity --output text --query 'Account')
-        bucket_name="v-infra-${account_id}"
+        bucket_name="infra-${account_id}"
         aws s3api head-bucket --bucket $bucket_name || echo "Bucket does not exist"
       continue-on-error: true
-  
-    - name: Create S3 bucket if not exists
-      if: ${{ steps.check_bucket.outcome != 'failure' }}
+
+    - name: Create or Use S3 bucket
       run: |
-        account_id=$(aws sts get-caller-identity --output text --query 'Account')
-        bucket_name="infra-${account_id}"
-        aws s3 mb s3://$bucket_name --region ${{ secrets.AWS_REGION }}
+        if [ "$?" == "0" ]; then
+          account_id=$(aws sts get-caller-identity --output text --query 'Account')
+          bucket_name="infra-${account_id}"
+          aws s3 mb s3://$bucket_name --region ${{ secrets.AWS_REGION }}
+          echo "Created new S3 bucket: $bucket_name"
+        else
+          account_id=$(aws sts get-caller-identity --output text --query 'Account')
+          bucket_name="infra-${account_id}"
+          # Your code here to use the existing S3 bucket
+          echo "Using existing S3 bucket: $bucket_name"
+          # Add your additional steps or commands that use the existing bucket
+        fi
 
     - name: Deploy CloudFormation stack
       run: |
