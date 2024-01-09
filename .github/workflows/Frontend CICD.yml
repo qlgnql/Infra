@@ -52,7 +52,7 @@ jobs:
           echo "{\"ApiUrl\": \"$API_ID\"}" > src/config.json
     
       - name: Build project
-        run: npm run build --dry-run
+        run: npm run build
         env: 
           CI: ""
 
