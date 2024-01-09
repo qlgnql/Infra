@@ -4,6 +4,10 @@ on:
   pull_request:
     branches:
       - develop
+    paths-ignore:
+      - '.github/workflows/CloudFormation CD.yml'
+      - '.github/workflows/Frontend CICD.yml'
+      - 'CloudFormation.yaml'
 
 jobs:
   build:
@@ -46,7 +50,7 @@ jobs:
     
       - name: Get API Gateway endpoint
         run: |
-          API_ID=$(aws cloudformation describe-stacks --stack-name beatoncloud-stack --query "Stacks[0].Outputs[?OutputKey=='APIEndpoint'].OutputValue" --output text)
+          API_ID=$(aws cloudformation describe-stacks --stack-name v-cloudformation --query "Stacks[0].Outputs[?OutputKey=='APIEndpoint'].OutputValue" --output text)
           echo "{\"ApiUrl\": \"$API_ID\"}" > src/config.json
     
       - name: Build
