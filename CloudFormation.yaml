@@ -28,7 +28,7 @@ Outputs:
   DeploytoCloudFront:
     Description: Deploy react application to S3 for static web hosting
     Value: !Sub >-
-      aws s3 sync ~/work/Infra/Infra s3://${S3Bucket}
+      aws s3 sync ~/work/Infra/Infra/build s3://${S3Bucket}
 
 # 클라우드포메이션 stack에 대한 description / 2023-12-27 주석 추가
 Description: beatoncloud-personalize
@@ -190,7 +190,7 @@ Resources:
       Comment: 'Bucket to store some data'
     Properties:
       AccessControl: 'Private'
-      BucketName: !Sub 'beatoncloud.com'
+      BucketName: !Sub 'beatoncloud-${AWS::AccountId}'
     Type: 'AWS::S3::Bucket'
 
   # S3에 대한 버킷 정책 생성 / 2023-12-27 주석 추가
