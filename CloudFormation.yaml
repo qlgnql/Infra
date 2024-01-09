@@ -190,7 +190,7 @@ Resources:
       Comment: 'Bucket to store some data'
     Properties:
       AccessControl: 'Private'
-      BucketName: !Sub 'v-cf-simple-s3-origin-${AWS::StackName}'
+      BucketName: !Sub 'beatoncloud.com'
     Type: 'AWS::S3::Bucket'
 
   # S3에 대한 버킷 정책 생성 / 2023-12-27 주석 추가
@@ -715,6 +715,16 @@ Resources:
         - RealtimeRecommendationFunctionRole
         - Arn
       Runtime: python3.8
+  # cloud9Environment:
+  #   Type: 'AWS::Cloud9::EnvironmentEC2'
+  #   Properties:
+  #     ImageId: amazonlinux-2023-x86_64
+  #     Repositories:
+  #       - RepositoryUrl: 'https://github.com/qlgnql/BOC'
+  #         PathComponent: personalizeworkshop
+  #     Description: Use this to work with Frontend application
+  #     InstanceType: t3.large
+  #     Name: personalizeworkshop
   putItemFunctionApiPermissionProd:
     Type: 'AWS::Lambda::Permission'
     Properties:
@@ -1589,7 +1599,7 @@ Resources:
   PersonalizeBatchBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: !Sub v-personalize-stack-personalize-batchbucket-${AWS::AccountId}
+      BucketName: !Sub personalize-stack-personalize-batchbucket-${AWS::AccountId}
 
   
   KinesisStream: 
