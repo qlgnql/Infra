@@ -59,7 +59,7 @@ jobs:
       - name: Frontend Deploy to S3
         run: |
           account_id=$(aws sts get-caller-identity --output text --query 'Account')
-          S3_NAME=$(aws s3api list-buckets --query "Buckets[?contains(Name, 'beatoncloud.com')].Name" --output text)
+          S3_NAME=$(aws s3api list-buckets --query "Buckets[?contains(Name, 'beatoncloud-$account_id')].Name" --output text)
           aws s3 sync $GITHUB_WORKSPACE/build s3://$S3_NAME
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

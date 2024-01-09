@@ -190,7 +190,7 @@ Resources:
       Comment: 'Bucket to store some data'
     Properties:
       AccessControl: 'Private'
-      BucketName: !Sub 'beatoncloud.com'
+      BucketName: !Sub 'beatoncloud-${AWS::AccountId}'
     Type: 'AWS::S3::Bucket'
 
   # S3에 대한 버킷 정책 생성 / 2023-12-27 주석 추가
